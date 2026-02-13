@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ultimate Cozy Dashboard</title>
+<style>
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+  color: white;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ===== Profile Modal ===== */
+#profileModal {
+  position: fixed;
+  top:50%;
+  left:50%;
+  transform: translate(-50%,-50%);
+  background: rgba(30,30,47,0.95);
+  padding: 20px;
+  border-radius: 15px;
+  width: 300px;
+  text-align:center;
+  color:white;
+  z-index:1000;
+}
+#profileModal input, #profileModal select { width:100%; margin-bottom:10px; border-radius:8px; padding:5px; font-family:'Segoe UI',sans-serif;}
+#profileModal button { width:100%; padding:8px; border:none; border-radius:10px; background:#ffb6c1; color:#1e1e2f; font-weight:bold; cursor:pointer; transition:0.2s; }
+#profileModal button:hover { transform:scale(1.05); }
+
+/* ===== Sidebar ===== */
+#sidebar {
+  position: fixed;
+  top:20px;
+  right:20px;
+  width:180px;
+  height:600px;
+  background: rgba(30,30,47,0.9);
+  border-radius:15px;
+  padding:10px;
+  overflow-y:auto;
+  font-size:13px;
+}
+.user-entry { 
+  display:flex; 
+  align-items:center; 
+  margin-bottom:10px; 
+  background:rgba(255,255,255,0.1); 
+  border-radius:8px; 
+  padding:5px; 
+  justify-content: space-between;
+}
+.user-entry img { width:32px; height:32px; border-radius:50%; margin-right:5px; }
+.user-entry span { flex:1; }
+.user-entry .role-label { font-size:11px; font-weight:bold; padding:2px 6px; border-radius:6px; color:white; }
+.role-owner { background:#ff69b4; }   /* وردي قوي */
+.role-admin { background:#32cd32; }   /* أخضر */
+.role-visitor { background:#888888; } /* رمادي */
+.user-entry button { margin-left:3px; background:#ffa500; color:white; border:none; border-radius:6px; cursor:pointer; font-size:10px; }
+
+/* ===== Menu ===== */
+.menu {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 500px;
+  height: 650px;
+  background: rgba(30,30,47,0.95);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 0 30px rgba(255,182,193,0.3);
+  display: none;
+  overflow-y: auto;
+}
+
+/* Tabs */
+.tabs { display: flex; justify-content: space-around; margin-bottom: 15px; flex-wrap: wrap;}
+.tab { cursor: pointer; padding: 5px 10px; border-radius: 10px; background: rgba(255,182,193,0.2); transition:0.2s; margin-bottom:5px; }
+.tab.active { background: #ffb6c1; color:#1e1e2f; font-weight:bold; }
+
+/* Tab content */
+.tab-content { display: none; }
+.tab-content.active { display: block; max-height:550px; overflow-y:auto; }
+
+/* Posts Section */
+.post {
+  background: rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 10px;
+  position: relative;
+  transition: 0.2s;
+}
+.post:hover { background: rgba(255,255,255,0.2); box-shadow: 0 0 10px #ffb6c1; }
+.post img { width: 100%; border-radius: 10px; margin-top:5px; }
+
+/* Delete button */
+.delete-btn {
+  position: absolute;
+  top:8px;
+  right:8px;
+  width:22px;
+  height:22px;
+  background: #ff5c5c;
+  color:white;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
+  font-size:14px;
+  line-height:18px;
+  text-align:center;
+  padding:0;
+  transition:0.2s;
+}
+.delete-btn:hover { background:#ff1c1c; transform:scale(1.2); }
+
+/* Buttons */
+button { width:100%; padding:10px; border:none; border-radius:12px; background:#ffb6c1; color:#1e1e2f; font-weight:bold; cursor:pointer; margin-bottom:10px; transition:transform 0.2s ease, box-shadow 0.3s ease, background 0.3s; }
+button:hover { transform:scale(1.05); box-shadow:0 0 15px #ffc6d0; background:#ffc6d0; }
+
+/* Inputs */
+input, textarea { width:100%; padding:8px; border-radius:10px; margin-bottom:10px; font-family:'Segoe UI',sans-serif; }
+
+/* Toggle */
+.toggle { display:flex; justify-content:space-between; align-items:center; }
+.toggle input { cursor:pointer; width:20px; height:20px; }
+
+/* Glow effect */
+.glow { box-shadow:0 0 10px rgba(255,182,193,0.6); transition:box-shadow 0.3s; }
+
+/* Themes */
+:root { --main-pink:#ffb6c1; --main-mint:#98ff98; --main-lavender:#c8a2c8; }
+.theme-pink button, .theme-pink .tab.active { background: var(--main-pink); color:#1e1e2f; }
+.theme-mint button, .theme-mint .tab.active { background: var(--main-mint); color:#1e1e2f; }
+.theme-lavender button, .theme-lavender .tab.active { background: var(--main-lavender); color:#1e1e2f; }
+</style>
+</head>
+<body>
+
+<!-- Profile Modal -->
+<div id="profileModal">
+  <h3>Welcome! 🌸</h3>
+  <input type="text" id="username" placeholder="Your Name">
+  <input type="text" id="avatarURL" placeholder="Avatar URL (optional)">
+  <select id="userState">
+    <option value="Online">Online 🌟</option>
+    <option value="Busy">Busy ⏳</option>
+    <option value="Away">Away 🌙</option>
+  </select>
+  <button id="saveProfile">Save 💖</button>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar"></div>
+
+<!-- Cozy Menu -->
+<div class="menu" id="menu">
+  <h2>🌸 Cozy Menu</h2>
+  <div class="tabs">
+    <div class="tab active" data-tab="visuals">Visuals ✨</div>
+    <div class="tab" data-tab="settings">Settings ⚙️</div>
+    <div class="tab" data-tab="posts">Posts 📝</div>
+    <div class="tab" data-tab="profile">Profile 👤</div>
+    <div class="tab" data-tab="discord">Discord 🔗</div>
+    <div class="tab" data-tab="about">About 💖</div>
+  </div>
+
+  <!-- Visuals Tab -->
+  <div class="tab-content active" id="visuals">
+    <div class="option toggle">
+      <span>Enable Glow ✨</span>
+      <input type="checkbox" id="glowToggle">
+    </div>
+    <div class="option">
+      <label>Speed 💨</label>
+      <input type="range" min="0" max="100" value="50" id="speedSlider">
+    </div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div class="tab-content" id="settings">
+    <div class="option toggle">
+      <span>Dark Mode 🌙</span>
+      <input type="checkbox" id="darkToggle">
+    </div>
+    <div class="option toggle">
+      <span>Theme 🎨</span>
+      <select id="themeSelect">
+        <option value="pink">Pink 🌸</option>
+        <option value="mint">Mint 🍃</option>
+        <option value="lavender">Lavender 💜</option>
+      </select>
+    </div>
+    <button id="saveSettings">Save Settings 💖</button>
+  </div>
+
+  <!-- Posts Tab -->
+  <div class="tab-content" id="posts">
+    <textarea id="postText" placeholder="اكتب منشورك هنا..."></textarea>
+    <input type="text" id="postImage" placeholder="رابط صورة (اختياري)">
+    <button id="addPost">أضف منشور 💖</button>
+    <div id="postsContainer"></div>
+  </div>
+
+  <!-- Profile Tab -->
+  <div class="tab-content" id="profile">
+    <input type="text" id="editName" placeholder="Edit Name">
+    <input type="text" id="editAvatar" placeholder="Edit Avatar URL">
+    <select id="editState">
+      <option value="Online">Online 🌟</option>
+      <option value="Busy">Busy ⏳</option>
+      <option value="Away">Away 🌙</option>
+    </select>
+    <button id="saveProfileEdit">Save Profile 💖</button>
+  </div>
+
+  <!-- Discord Tab -->
+  <div class="tab-content" id="discord">
+    <button id="discordBtn">Join Discord Server 🔗</button>
+  </div>
+
+  <!-- About Tab -->
+  <div class="tab-content" id="about">
+    <p style="text-align:center;">Made with 💖 by You<br>v1.6 Cozy Dashboard</p>
+  </div>
+</div>
+
+<audio id="clickSound" src="https://freesound.org/data/previews/337/337049_3230164-lq.mp3"></audio>
+
+<script>
+// ===== Utility Sound =====
+const clickSound = document.getElementById("clickSound");
+function playClick(){ clickSound.currentTime=0; clickSound.play(); }
+
+// ===== Profile Modal =====
+const profileModal = document.getElementById("profileModal");
+const usernameInput = document.getElementById("username");
+const avatarInput = document.getElementById("avatarURL");
+const userState = document.getElementById("userState");
+const sidebar = document.getElementById("sidebar");
+
+let profile = JSON.parse(localStorage.getItem("userProfile")||"{}");
+let isOwner = false;
+
+function updateSidebar(){
+    let users = JSON.parse(localStorage.getItem("allUsers")||"[]");
+    sidebar.innerHTML="";
+    users.forEach((u,i)=>{
+        const div = document.createElement("div");
+        div.className="user-entry";
+        let roleClass="role-visitor", roleText="Visitor";
+        if(u.name===profile.name) { roleClass="role-owner"; roleText="Owner"; }
+        else if(u.role==="admin") { roleClass="role-admin"; roleText="Admin"; }
+        div.innerHTML=`
+            <img src="${u.avatar||'https://via.placeholder.com/32'}">
+            <span>${u.name} (${u.state})</span>
+            <span class="role-label ${roleClass}">${roleText}</span>
+            ${isOwner && roleText!=="Owner" ? '<button class="makeAdminBtn" data-index="'+i+'">Make Admin</button>':''}
+        `;
+        sidebar.appendChild(div);
+    });
+
+    // ===== Owner gives Admin role =====
+    if(isOwner){
+      document.querySelectorAll(".makeAdminBtn").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const idx = btn.dataset.index;
+          users[idx].role = "admin";
+          localStorage.setItem("allUsers", JSON.stringify(users));
+          updateSidebar();
+          playClick();
+        });
+      });
+    }
+}
+
+// ===== Save/Update User =====
+function saveUser(user){
+    let allUsers = JSON.parse(localStorage.getItem("allUsers")||"[]");
+    const index = allUsers.findIndex(u=>u.name===user.name);
+    if(index>=0) allUsers[index]=user;
+    else allUsers.push({...user, role:"owner"}); // أول شخص Owner
+    localStorage.setItem("allUsers", JSON.stringify(allUsers));
+    updateSidebar();
+}
+
+if(profile.name){
+    profileModal.style.display="none";
+    document.getElementById("menu").style.display="block";
+    isOwner = true; 
+    saveUser(profile);
+} else{
+    profileModal.style.display="block";
+}
+
+document.getElementById("saveProfile").addEventListener("click", ()=>{
+    profile = {
+        name: usernameInput.value || "Owner",
+        avatar: avatarInput.value || "",
+        state: userState.value
+    };
+    localStorage.setItem("userProfile", JSON.stringify(profile));
+    profileModal.style.display="none";
+    document.getElementById("menu").style.display="block";
+    isOwner = true;
+    saveUser(profile);
+    playClick();
+});
+
+// ===== Menu Toggle =====
+const menu = document.getElementById("menu");
+document.addEventListener('keydown', e=>{
+  if(e.key==="Insert"){
+    menu.style.display = menu.style.display==="block"?"none":"block";
+  }
+});
+
+// ===== Tabs =====
+const tabs = document.querySelectorAll('.tab');
+tabs.forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-content').forEach(tc=>tc.style.display='none');
+    document.getElementById(tab.dataset.tab).style.display='block';
+    tabs.forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+  });
+});
+
+// ===== Posts =====
+const postText = document.getElementById("postText");
+const postImage = document.getElementById("postImage");
+const addPost = document.getElementById("addPost");
+const postsContainer = document.getElementById("postsContainer");
+
+let posts = JSON.parse(localStorage.getItem("posts")||"[]");
+
+function renderPosts(){
+  postsContainer.innerHTML="";
+  posts.forEach((p,i)=>{
+    const div=document.createElement("div");
+    div.className="post";
+    div.innerHTML=`<div>${p.text}</div>${p.img?'<img src="'+p.img+'">':''}${isOwner?'<button class="delete-btn" data-index="'+i+'">×</button>':''}`;
+    postsContainer.appendChild(div);
+  });
+
+  if(isOwner){
+    document.querySelectorAll(".delete-btn").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        const idx = btn.dataset.index;
+        posts.splice(idx,1);
+        localStorage.setItem("posts",JSON.stringify(posts));
+        renderPosts();
+        playClick();
+      });
+    });
+  }
+}
+renderPosts();
+
+addPost.addEventListener("click", ()=>{
+  if(!isOwner) return; 
+  if(postText.value.trim()==="") return;
+  posts.unshift({text:postText.value.trim(), img:postImage.value.trim()});
+  localStorage.setItem("posts",JSON.stringify(posts));
+  postText.value=""; postImage.value="";
+  renderPosts();
+  playClick();
+});
+
+// ===== Glow & Theme =====
+const glowToggle = document.getElementById("glowToggle");
+const speedSlider = document.getElementById("speedSlider");
+const darkToggle = document.getElementById("darkToggle");
+const themeSelect = document.getElementById("themeSelect");
+
+glowToggle.checked = localStorage.getItem("glow")==="true";
+speedSlider.value = localStorage.getItem("speed") || 50;
+darkToggle.checked = localStorage.getItem("dark")==="true";
+themeSelect.value = localStorage.getItem("theme") || "pink";
+
+function updateGlow(){
+  if(glowToggle.checked){
+    document.querySelectorAll('button, .toggle input').forEach(el=>el.classList.add('glow'));
+  } else{
+    document.querySelectorAll('button, .toggle input').forEach(el=>el.classList.remove('glow'));
+  }
+}
+updateGlow();
+
+function updateTheme(){
+  document.body.classList.remove("theme-pink","theme-mint","theme-lavender");
+  document.body.classList.add("theme-"+themeSelect.value);
+}
+updateTheme();
+
+glowToggle.addEventListener('change', ()=>{
+  localStorage.setItem("glow", glowToggle.checked);
+  updateGlow();
+  playClick();
+});
+themeSelect.addEventListener('change', ()=>{
+  localStorage.setItem("theme", themeSelect.value);
+  updateTheme();
+  playClick();
+});
+
+// ===== Dark Mode =====
+darkToggle.addEventListener('change', ()=>{
+  localStorage.setItem("dark", darkToggle.checked);
+  if(darkToggle.checked){
+    document.body.style.background = "#1e1e2f";
+  } else{
+    document.body.style.background = "linear-gradient(135deg, #1e1e2f, #2a2a40)";
+  }
+  playClick();
+});
+
+// ===== Save Buttons =====
+document.getElementById("saveSettings").addEventListener("click", ()=>{
+  localStorage.setItem("glow", glowToggle.checked);
+  localStorage.setItem("speed", speedSlider.value);
+  localStorage.setItem("dark", darkToggle.checked);
+  localStorage.setItem("theme", themeSelect.value);
+  alert("Settings Saved 💖");
+  playClick();
+});
+
+// ===== Profile Edit =====
+document.getElementById("saveProfileEdit").addEventListener("click", ()=>{
+  profile.name = document.getElementById("editName").value || profile.name;
+  profile.avatar = document.getElementById("editAvatar").value || profile.avatar;
+  profile.state = document.getElementById("editState").value || profile.state;
+  localStorage.setItem("userProfile", JSON.stringify(profile));
+  saveUser(profile);
+  alert("Profile Updated 💖");
+  playClick();
+  updateSidebar();
+});
+
+// ===== Discord =====
+document.getElementById("discordBtn").addEventListener("click", ()=>{
+  window.open("https://discord.gg/yourserver","_blank");
+});
+
+// ===== Initialize Sidebar =====
+updateSidebar();
+</script>
+</body>
+</html>
+
+
+
+
+
